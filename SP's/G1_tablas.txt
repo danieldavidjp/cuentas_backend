@@ -4,7 +4,7 @@ CREATE TABLE g1_cuenta_ahorros
 	ca_fecha_creacion		DATETIME NOT NULL,
 	ca_fecha_modificacion	DATETIME NOT NULL,
 	ca_cliente				VARCHAR (30) NOT NULL,
-	ca_saldo				INT NOT NULL
+	ca_saldo				FLOAT NOT NULL
 	)
 GO
 
@@ -14,7 +14,7 @@ CREATE TABLE g1_cuenta_corriente
 	cc_fecha_creacion		DATETIME NOT NULL,
 	cc_fecha_modificacion	DATETIME NOT NULL,
 	cc_cliente				VARCHAR (30) NOT NULL,
-	cc_saldo				INT NOT NULL
+	cc_saldo				FLOAT NOT NULL
 	)
 GO
 
