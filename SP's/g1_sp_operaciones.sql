@@ -33,16 +33,23 @@ CREATE PROC g1_sp_operaciones
 /****************************************************************************/
 
 (
-@i_banco		int,
+@i_cuenta		int,
+@i_cuentaD		int,
 @i_valor		FLOAT,
 @i_operacion	char(1),
 @t_trn			INT =99 ---25190
 )
 as 
 
-declare @t_debug CHAR(1)
-select @t_debug = 'N'
 
+DECLARE 
+	@w_sp_name  varchar(32),
+    @t_file     varchar(10) = null,
+    @t_debug 	CHAR(1)
+
+
+select @t_debug = 'N'
+select @w_sp_name = 'sp_direccion_cons'
 
 if @i_operacion = 'C' 
 begin
@@ -52,27 +59,35 @@ begin
    				FROM 
 					g1_cuenta_corriente
 				WHERE 
-					cc_banco = @i_banco)
+					cc_banco = @i_cuenta)
 		BEGIN
 		
 			UPDATE g1_cuenta_corriente
 				SET 
 					cc_saldo = cc_saldo + @i_valor
 				WHERE 
-					cc_banco = @i_banco
+					cc_banco = @i_cuenta
 		END
-	ELSE ( SELECT 
+	ELSE IF EXISTS( SELECT 
 					ca_saldo 
    				FROM 
 					g1_cuenta_ahorros
 				WHERE 
-					ca_banco = @i_banco)
+					ca_banco = @i_cuenta)
 		BEGIN
 	    	UPDATE g1_cuenta_ahorros
 				SET 
 					ca_saldo = ca_saldo + @i_valor
 				WHERE
-					ca_banco = @i_banco
+					ca_banco = @i_cuenta
+		END
+	ELSE 
+		BEGIN
+		exec cobis..sp_cerror					   
+			@t_debug  = @t_debug,                        
+			@t_file   = @t_file,                       
+			@t_from  = @w_sp_name,                       
+			@i_num   = 1853 -- La cuenta ya existe                return 1
 		END
 end
 
@@ -84,27 +99,27 @@ begin
    				FROM 
 					g1_cuenta_corriente
 				WHERE 
-					cc_banco = @i_banco)
+					cc_banco = @i_cuenta)
 		BEGIN
 		
 			UPDATE g1_cuenta_corriente
 				SET 
 					cc_saldo = cc_saldo - @i_valor
 				WHERE
-					cc_banco= @i_banco
+					cc_banco= @i_cuenta
 		END
-	ELSE ( SELECT 
+	ELSE IF EXISTS( SELECT 
 					ca_saldo 
    				FROM 
 					g1_cuenta_ahorros
 				WHERE 
-					ca_banco = @i_banco)
+					ca_banco = @i_cuenta)
 		BEGIN
 	    	UPDATE g1_cuenta_ahorros
 				SET 
 					ca_saldo = ca_saldo - @i_valor
 				WHERE
-					ca_banco= @i_banco
+					ca_banco= @i_cuenta
 		END
 	ELSE 
 		BEGIN
@@ -117,4 +132,6 @@ begin
 END
 
 return 0
+
 GO
+
