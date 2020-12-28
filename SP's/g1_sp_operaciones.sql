@@ -1,12 +1,6 @@
-USE Cobis
-go
-
-if OBJECT_ID('g1_sp_operaciones') is not null
-begin
-	drop proc g1_sp_operaciones
-end
-
-go
+IF OBJECT_ID ('dbo.g1_sp_operaciones') IS NOT NULL
+	DROP PROCEDURE dbo.g1_sp_operaciones
+GO
 
 CREATE PROC g1_sp_operaciones 
 /****************************************************************************/
@@ -48,18 +42,47 @@ as
 declare @w_error int
 select @w_error = 0
 
+DECLARE @w_tipo_cuenta varchar 
+
 
 if @i_operacion = 'C' 
 begin
 
-	select ca_banco,ca_saldo from g1_cuenta_ahorros WHERE ca_banco = @i_banco
-	
-	IF @@ROWCOUNT > 0
-		BEGIN
-			select cc_banco,cc_saldo from g1_cuenta_corriente WHERE cc_banco = @i_banco
-		END 
 
+	SELECT 
+		cl_cedula, 
+		cl_nombre, 
+		cl_apellido,
+		cc_banco,cc_saldo
+	FROM 
+		cliente_taller C, 
+		g1_cuenta_corriente O
+	WHERE 
+	C.cl_id = O.cc_cliente 
+	AND 
+	O.cc_banco = @i_banco
+	
+	SELECT @w_tipo_cuenta = 'Corriente'
+	
+	IF @@ROWCOUNT < 1
+		BEGIN
+		   SELECT 
+				cl_cedula, 
+				cl_nombre, 
+				cl_apellido,
+				ca_banco,ca_saldo
+			FROM 
+				cliente_taller C, 
+				g1_cuenta_ahorros O
+			WHERE 
+			C.cl_id = O.ca_cliente 
+			AND 
+			O.ca_banco = @i_banco
+			
+			SELECT @w_tipo_cuenta = 'Ahorro'
+		END 
 end
 
 
 return select @w_error
+GO
