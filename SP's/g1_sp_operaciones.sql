@@ -40,85 +40,81 @@ CREATE PROC g1_sp_operaciones
 )
 as 
 
-declare @w_error int
-select @w_error = 0
-
-DECLARE @w_tipo_cuenta varchar 
+declare @t_debug CHAR(1)
+select @t_debug = 'N'
 
 
 if @i_operacion = 'C' 
 begin
-
-	SELECT 
-		cl_cedula, 
-		cl_nombre, 
-		cl_apellido,
-		cc_banco,cc_saldo
-	FROM 
-		cliente_taller C, 
-		g1_cuenta_corriente O
-	WHERE 
-	C.cl_id = O.cc_cliente 
-	AND 
-	O.cc_banco = @i_banco
 	
-	SELECT @w_tipo_cuenta = 'Corriente'
-	
-	IF @@ROWCOUNT < 1
+	IF EXISTS ( SELECT 
+					cc_saldo 
+   				FROM 
+					g1_cuenta_corriente
+				WHERE 
+					cc_banco = @i_banco)
 		BEGIN
-		   SELECT 
-				cl_cedula, 
-				cl_nombre, 
-				cl_apellido,
-				ca_banco,ca_saldo
-			FROM 
-				cliente_taller C, 
-				g1_cuenta_ahorros O
-			WHERE 
-			C.cl_id = O.ca_cliente 
-			AND 
-			O.ca_banco = @i_banco
-			
-			SELECT @w_tipo_cuenta = 'Ahorro'
-		END 
+		
+			UPDATE g1_cuenta_corriente
+				SET 
+					cc_saldo = cc_saldo + @i_valor
+				WHERE 
+					cc_banco = @i_banco
+		END
+	ELSE ( SELECT 
+					ca_saldo 
+   				FROM 
+					g1_cuenta_ahorros
+				WHERE 
+					ca_banco = @i_banco)
+		BEGIN
+	    	UPDATE g1_cuenta_ahorros
+				SET 
+					ca_saldo = ca_saldo + @i_valor
+				WHERE
+					ca_banco = @i_banco
+		END
 end
 
 if @i_operacion = 'R' 
 begin
 
-	SELECT 
-		cl_cedula, 
-		cl_nombre, 
-		cl_apellido,
-		cc_banco,cc_saldo
-	FROM 
-		cliente_taller C, 
-		g1_cuenta_corriente O
-	WHERE 
-	C.cl_id = O.cc_cliente 
-	AND 
-	O.cc_banco = @i_banco
-	
-	SELECT @w_tipo_cuenta = 'Corriente'
-	
-	IF @@ROWCOUNT < 1
+  	IF EXISTS ( SELECT 
+					cc_saldo 
+   				FROM 
+					g1_cuenta_corriente
+				WHERE 
+					cc_banco = @i_banco)
 		BEGIN
-		   SELECT 
-				cl_cedula, 
-				cl_nombre, 
-				cl_apellido,
-				ca_banco,ca_saldo
-			FROM 
-				cliente_taller C, 
-				g1_cuenta_ahorros O
-			WHERE 
-			C.cl_id = O.ca_cliente 
-			AND 
-			O.ca_banco = @i_banco
-			
-			SELECT @w_tipo_cuenta = 'Ahorro'
-		END 
+		
+			UPDATE g1_cuenta_corriente
+				SET 
+					cc_saldo = cc_saldo - @i_valor
+				WHERE
+					cc_banco= @i_banco
+		END
+	ELSE ( SELECT 
+					ca_saldo 
+   				FROM 
+					g1_cuenta_ahorros
+				WHERE 
+					ca_banco = @i_banco)
+		BEGIN
+	    	UPDATE g1_cuenta_ahorros
+				SET 
+					ca_saldo = ca_saldo - @i_valor
+				WHERE
+					ca_banco= @i_banco
+		END
+	ELSE 
+		BEGIN
+		exec cobis..sp_cerror					   
+			@t_debug  = @t_debug,                        
+			@t_file   = @t_file,                       
+			@t_from  = @w_sp_name,                       
+			@i_num   = 1853 -- La cuenta ya existe                return 1
+		END
 END
 
-return select @w_error
+return 0
 GO
