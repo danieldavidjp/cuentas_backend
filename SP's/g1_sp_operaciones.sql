@@ -45,7 +45,12 @@ as
 DECLARE 
 	@w_sp_name  varchar(32),
     @t_file     varchar(10) = null,
-    @t_debug 	CHAR(1)
+    @t_debug 	CHAR(1),
+    @w_rows int
+
+
+select @w_rows = isnull((select max(tr_id) from g1_transaccion), 0)
+select @w_rows = @w_rows + 1
 
 
 select @t_debug = 'N'
@@ -67,7 +72,15 @@ begin
 					cc_saldo = cc_saldo + @i_valor
 				WHERE 
 					cc_banco = @i_cuenta
+
+					
+	    	INSERT INTO g1_transaccion
+			    (tr_id,	tr_fecha,	tr_cuenta,		tr_tipo_tr,	tr_tipo_cuenta)
+			VALUES
+			    (@w_rows,getdate(),	@i_cuenta,		'D',		'Corriente')
+			    
 		END
+		
 	ELSE IF EXISTS( SELECT 
 					ca_saldo 
    				FROM 
@@ -80,6 +93,11 @@ begin
 					ca_saldo = ca_saldo + @i_valor
 				WHERE
 					ca_banco = @i_cuenta
+					
+	    	INSERT INTO g1_transaccion
+			    (tr_id,	tr_fecha,	tr_cuenta,		tr_tipo_tr,	tr_tipo_cuenta)
+			VALUES
+			    (@w_rows,getdate(),	@i_cuenta,		'D',		'Ahorro')
 		END
 	ELSE 
 		BEGIN
@@ -107,6 +125,11 @@ begin
 					cc_saldo = cc_saldo - @i_valor
 				WHERE
 					cc_banco= @i_cuenta
+					
+	    	INSERT INTO g1_transaccion
+			    (tr_id,	tr_fecha,	tr_cuenta,		tr_tipo_tr,	tr_tipo_cuenta)
+			VALUES
+			    (@w_rows,getdate(),	@i_cuenta,		'R',		'Corriente')
 		END
 	ELSE IF EXISTS( SELECT 
 					ca_saldo 
@@ -120,6 +143,11 @@ begin
 					ca_saldo = ca_saldo - @i_valor
 				WHERE
 					ca_banco= @i_cuenta
+					
+	    	INSERT INTO g1_transaccion
+			    (tr_id,	tr_fecha,	tr_cuenta,		tr_tipo_tr,	tr_tipo_cuenta)
+			VALUES
+			    (@w_rows,getdate(),	@i_cuenta,		'R',		'Ahorro')
 		END
 	ELSE 
 		BEGIN
